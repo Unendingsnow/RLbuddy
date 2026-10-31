@@ -1,0 +1,33 @@
+'use strict';
+// Ratchet: a very questionable pit-crew hire, drawn as scalable vector art.
+const buddyArt = `<svg class="buddy-svg" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<g class="buddy-float">
+<path class="rat-tail" d="M100 210 C45 242 25 231 23 196 C21 166 43 165 46 184 C51 206 26 204 17 184" fill="none" stroke="#20251e" stroke-width="15" stroke-linecap="round"/><path class="rat-tail" d="M100 210 C45 242 25 231 23 196 C21 166 43 165 46 184 C51 206 26 204 17 184" fill="none" stroke="#f8906d" stroke-width="8" stroke-linecap="round"/><path d="M73 226 L70 234 M51 229 L48 237 M33 218 L28 222 M22 201 L28 200" fill="none" stroke="#20251e" stroke-width="2"/>
+<path class="buddy-foot foot-left" d="M112 225 L94 244 L98 251 L128 249 L136 235" fill="var(--buddy-color, #ff4b1e)" stroke="#20251e" stroke-width="3.5"/><path class="buddy-foot foot-right" d="M177 225 L183 246 L212 250 L220 245 L198 230" fill="var(--buddy-color, #ff4b1e)" stroke="#20251e" stroke-width="3.5"/><path d="M103 245 L108 239 M113 246 L116 241 M200 241 L198 246 M207 243 L206 247" fill="none" stroke="#20251e" stroke-width="2" stroke-linecap="round"/>
+<path class="buddy-body" d="M104 125 L85 148 L91 149 L76 175 L88 173 L82 203 L91 197 L91 221 L110 215 L115 234 L134 226 L148 238 L165 229 L186 234 L192 219 L208 225 L212 200 L224 205 L215 177 L223 174 L204 145 L178 123Z" fill="#42483d" stroke="#20251e" stroke-width="4" stroke-linejoin="round"/>
+<path d="M117 168 L104 179 L117 218 L149 225 L147 178Z M162 178 L159 226 L189 218 L200 179 L181 165Z" fill="#d6ef39" stroke="#20251e" stroke-width="3"/><path d="M114 195 L143 207 M166 207 L193 195" fill="none" stroke="#f0e8d2" stroke-width="7"/><path d="M124 184 L130 187 M178 183 L182 178" stroke="#20251e" stroke-width="2"/>
+<path class="buddy-arm arm-left" d="M98 165 Q74 171 72 199 L65 203 L71 208 L64 215 L77 217 L88 205 L110 184" fill="#42483d" stroke="#20251e" stroke-width="3.5" stroke-linejoin="round"/><path d="M74 201 L72 209 L79 211" fill="none" stroke="#f8906d" stroke-width="5" stroke-linejoin="round"/><path class="buddy-arm arm-right" d="M201 171 Q228 178 224 196 L234 200 L228 207 L219 203 L211 208 L200 191" fill="#42483d" stroke="#20251e" stroke-width="3.5" stroke-linejoin="round"/><path d="M222 196 L219 201 L226 203" fill="none" stroke="#f8906d" stroke-width="5" stroke-linejoin="round"/>
+<g class="buddy-ear ear-left"><path d="M107 108 Q67 71 71 39 L90 48 L98 35 L111 51 L122 48 L131 99Z" fill="#42483d" stroke="#20251e" stroke-width="4" stroke-linejoin="round"/><path d="M107 87 L87 57 L108 65 L117 95Z" fill="#f8906d"/><path d="M78 44 L86 58" stroke="#20251e" stroke-width="2"/></g><g class="buddy-ear ear-right"><path d="M167 94 Q178 38 206 39 L204 55 L219 57 L214 77 L220 83 L193 109Z" fill="#42483d" stroke="#20251e" stroke-width="4" stroke-linejoin="round"/><path d="M183 93 L195 57 L205 65 L200 85Z" fill="#f8906d"/></g>
+<path d="M91 102 L108 86 L105 76 L126 81 L133 67 L148 78 L165 70 L175 83 L194 86 L204 105 L222 118 L214 130 L232 141 L216 168 L198 178 L172 174 L157 184 L143 176 L123 181 L119 169 L98 168 L104 151 L87 145 L97 128 L85 124Z" fill="#42483d" stroke="#20251e" stroke-width="4" stroke-linejoin="round"/>
+<path d="M111 101 Q135 86 156 104 Q179 92 197 110 L240 145 L245 161 L218 178 L182 171 L164 159 L145 166 L121 153 L108 132Z" fill="#eee6d0" stroke="#20251e" stroke-width="3.5" stroke-linejoin="round"/><path d="M111 109 L122 104 L125 117 L118 137 L109 128Z M179 104 L195 111 L201 131 L189 137 L174 123Z" fill="#727868"/>
+<g class="eye-group"><g class="eye eye-left"><path d="M119 115 Q132 103 146 119 L143 139 Q127 144 116 134Z" fill="#faf6e9" stroke="#20251e" stroke-width="3"/><ellipse cx="135" cy="126" rx="4.5" ry="8" fill="#20251e"/><circle cx="137" cy="122" r="1.5" fill="#eee6d0"/></g><g class="eye eye-right"><path d="M168 116 Q183 110 195 125 L190 140 Q175 146 166 132Z" fill="#faf6e9" stroke="#20251e" stroke-width="3"/><ellipse cx="181" cy="130" rx="4" ry="6.5" fill="#20251e"/><circle cx="183" cy="127" r="1.2" fill="#eee6d0"/></g></g>
+<path class="brow brow-left" d="M116 112 L145 117" fill="none" stroke="#20251e" stroke-width="5" stroke-linecap="round"/><path class="brow brow-right" d="M169 116 L196 121" fill="none" stroke="#20251e" stroke-width="5" stroke-linecap="round"/>
+<path class="rat-nose" d="M228 141 L252 147 L248 160 L234 166 L224 155Z" fill="var(--buddy-color, #ff4b1e)" stroke="#20251e" stroke-width="3.5" stroke-linejoin="round"/><path d="M235 147 L244 150" stroke="#fff0dc" stroke-width="3" stroke-linecap="round"/>
+<path class="mouth mouth-smile" d="M169 148 Q185 172 218 160 L231 156" fill="none" stroke="#20251e" stroke-width="3.5" stroke-linecap="round"/><path class="rat-tooth" d="M193 164 L200 174 L205 162" fill="#fffdf1" stroke="#20251e" stroke-width="2.5" stroke-linejoin="round"/><path class="mouth mouth-sad" d="M176 165 Q193 151 215 167" fill="none" stroke="#20251e" stroke-width="3.5" stroke-linecap="round"/><ellipse class="mouth mouth-oh" cx="202" cy="161" rx="9" ry="11" fill="#20251e"/>
+<path d="M212 143 L236 133 M215 148 L249 139 M213 172 L236 181 M166 149 L151 153" fill="none" stroke="#20251e" stroke-width="2" stroke-linecap="round"/><path d="M100 118 L95 113 M103 143 L99 148 M141 87 L138 82 M161 86 L166 81" stroke="#727868" stroke-width="2"/><path d="M148 184 L155 188 L153 200 L146 196Z" fill="var(--buddy-color, #ff4b1e)" stroke="#20251e" stroke-width="2"/>
+</g>
+<g class="celebrate-stars" fill="#d6ef39" stroke="#20251e" stroke-width="2.5"><path d="M35 92 l6 -16 5 13 15 -3 -10 12 8 11 -15 -3 -9 11 1 -16 -12 -5Z"/><path d="M254 87 l7 -17 4 13 14 1 -10 8 5 14 -12 -7 -12 8 3 -15 -9 -5Z"/><path d="M161 30 l3 -12 5 9 10 -1 -7 8 4 9 -11 -4 -6 8 0 -11 -9 -5Z"/></g><g class="thinking-dots" fill="#20251e"><circle cx="241" cy="53" r="4"/><circle cx="256" cy="43" r="5"/><circle cx="274" cy="35" r="6"/></g></svg>`;
+document.querySelectorAll('.buddy-character').forEach((element) => { element.innerHTML = buddyArt; });
+window.BuddyVisual = {
+  mood(reaction) {
+    const moods = { hype: 'celebrate', happy: 'celebrate', celebrate: 'celebrate', surprised: 'shocked', shocked: 'shocked', smug: 'smug', idle: 'idle', sad: 'sad', thinking: 'thinking' };
+    if (Object.hasOwn(moods, reaction?.mood)) return moods[reaction.mood];
+    const event = reaction?.eventType;
+    if (['goal', 'win', 'epic_save'].includes(event)) return 'celebrate';
+    if (['conceded', 'demolished'].includes(event)) return 'shocked';
+    if (event === 'loss') return 'sad';
+    if (['demo', 'save', 'assist', 'team_goal'].includes(event)) return 'smug';
+    return 'idle';
+  },
+  color(value) { return /^#[0-9a-f]{6}$/i.test(value || '') ? value : '#ff4b1e'; },
+};

@@ -1,0 +1,21 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto');
+const {LocalRuntime,releaseAsset,executableCandidates}=require('../src/local-runtime');
+function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'buddy-installer-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir;}
+function asset(bytes){return {name:'OllamaSetup.exe',size:bytes.length,digest:'sha256:'+crypto.createHash('sha256').update(bytes).digest('hex'),browser_download_url:'https://github.com/ollama/ollama/releases/download/v1.0.0/OllamaSetup.exe'};}
+test('installer metadata rejects non-official URLs, missing hashes and excessive downloads',()=>{const a=asset(Buffer.from('fixture'));assert.equal(releaseAsset({assets:[a]}),a);for(const bad of [{...a,browser_download_url:'https://evil.example/OllamaSetup.exe'},{...a,digest:null},{...a,size:5*1024**3},{...a,browser_download_url:'http://github.com/ollama/ollama/releases/download/v1/OllamaSetup.exe'}])assert.throws(()=>releaseAsset({assets:[bad]}),/verified/);});
+test('installed running runtime is reused without downloading or running installer',async t=>{let calls=0;const runtime=new LocalRuntime({dir:fixture(t),candidates:[],run:()=>{throw Error('must not install');},fetch:async url=>{calls++;assert.equal(url,'http://127.0.0.1:11434/api/version');return {ok:true,json:async()=>({version:'test'})};}});assert.equal((await runtime.setup()).ok,true);assert.equal(runtime.status.phase,'ready');assert.equal(calls,2);});
+test('verified installer runs fixed silent arguments, reports progress, then removes download',async t=>{const dir=fixture(t),bytes=Buffer.from('a fake executable fixture'),a=asset(bytes);let installed=false,calls=0;const phases=[];const runtime=new LocalRuntime({dir,candidates:[],onStatus:s=>phases.push(s.phase),run:async(file,args,opts)=>{calls++;assert.deepEqual(fs.readFileSync(file),bytes);assert.deepEqual(args,['/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-']);assert.equal(opts.windowsHide,true);installed=true;},fetch:async url=>{if(url.endsWith('/api/version'))return {ok:installed,json:async()=>({version:'test'})};if(url.endsWith('/latest'))return {ok:true,json:async()=>({assets:[a]})};return {ok:true,url:a.browser_download_url,body:(async function*(){yield bytes.subarray(0,7);yield bytes.subarray(7);})()};}});assert.equal((await runtime.setup()).ok,true);assert.equal(calls,1);assert.ok(phases.includes('downloading'));assert.ok(phases.includes('installing'));assert.deepEqual(fs.readdirSync(dir),[]);});
+test('hash mismatch never executes downloaded bytes and clears partial files',async t=>{const dir=fixture(t),bytes=Buffer.from('bad'),a=asset(Buffer.from('yes'));let ran=false;const runtime=new LocalRuntime({dir,candidates:[],run:async()=>{ran=true;},fetch:async url=>url.endsWith('/api/version')?{ok:false}:url.endsWith('/latest')?{ok:true,json:async()=>({assets:[a]})}:{ok:true,url:a.browser_download_url,body:(async function*(){yield bytes;})()}});await assert.rejects(runtime.setup(),/verification failed/);assert.equal(ran,false);assert.deepEqual(fs.readdirSync(dir),[]);assert.equal(runtime.status.phase,'error');});
+test('runtime detection searches only absolute PATH entries and standard user install',()=>{const paths=executableCandidates({LOCALAPPDATA:'C:\\Users\\Test\\AppData\\Local',PATH:'relative;C:\\Tools;.'});assert.ok(paths.some(x=>x.endsWith('Programs\\Ollama\\ollama.exe')));assert.ok(paths.includes('C:\\Tools\\ollama.exe'));assert.equal(paths.length,2);});
+test('setup cancellation aborts the download and rejects overlapping setup requests',async t=>{
+  const dir=fixture(t);let ready;const checking=new Promise(r=>ready=r);
+  const runtime=new LocalRuntime({dir,candidates:[],fetch:async(url,options)=>{
+    if(url.endsWith('/api/version'))return {ok:false};
+    return new Promise((resolve,reject)=>{ready();options.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true});});
+  },run:()=>{throw Error('must not run');}});
+  const pending=runtime.setup();await checking;
+  await assert.rejects(runtime.setup(),/already running/);runtime.cancel();
+  await assert.rejects(pending,/cancelled/);assert.equal(runtime.controller,null);assert.deepEqual(fs.readdirSync(dir),[]);
+});

@@ -1,0 +1,27 @@
+{
+  "name": "rlbuddy",
+  "productName": "RL Buddy",
+  "version": "0.5.0",
+  "description": "Your animated, opinionated Rocket League desktop companion.",
+  "private": true,
+  "author": "RL Buddy",
+  "license": "UNLICENSED",
+  "main": "app/main.js",
+  "scripts": {
+    "start": "node scripts/run.js",
+    "test": "node --test test/*.test.js",
+    "test:app": "node scripts/run.js --smoke",
+    "mock": "node scripts/mock-game.js",
+    "build": "node scripts/build.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "electron": "44.10.0",
+    "electron-builder": "26.18.0"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  }
+}

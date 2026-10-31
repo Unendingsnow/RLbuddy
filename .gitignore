@@ -1,0 +1,10 @@
+node_modules/
+dist/
+artifacts/
+.env*
+*.log
+*.pfx
+*.p12
+*.pem
+*.key
+*.recovery-*

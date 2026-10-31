@@ -1,0 +1,41 @@
+appId: com.rlbuddy.desktop
+productName: RL Buddy
+directories:
+  output: dist
+files:
+  - app/**/*
+  - "!app/renderer/assets/ratchet-premium.png"
+  - src/**/*
+  - personalities/*.json
+  - package.json
+  - build/icon.png
+  - docs/PRIVACY.md
+  - docs/THIRD-PARTY-NOTICES.txt
+  - "!**/.env*"
+asar: true
+win:
+  target:
+    - target: portable
+      arch: [x64]
+    - target: nsis
+      arch: [x64]
+  artifactName: RL-Buddy-v${version}.exe
+  icon: build/icon.ico
+  signExecutable: false
+portable:
+  artifactName: RL-Buddy-v${version}.exe
+forceCodeSigning: false
+publish: null
+nsis:
+  artifactName: RL-Buddy-Setup-v${version}.exe
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  deleteAppDataOnUninstall: false
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
