@@ -305,6 +305,12 @@ function registerIpc() {
     } finally { interactionTestBusy = false; }
   });
   handle('buddy:state', state);
+  handle('buddy:profile', filters => {
+    if (!allowed()) throw new Error('Player profiles are available between matches or with Rocket League closed.');
+    const options = filters && typeof filters === 'object' ? filters : {};
+    const profile = require('../src/coaching/profile').buildProfile(memory.records(), {days:options.days,playlist:options.playlist,player:typeof options.player==='string'?options.player:store.settings.playerName});
+    return {ok:true,profile};
+  });
   handle('buddy:match', id => {
     if (!allowed()) throw new Error('Match review is paused while playing or game mode is unknown.');
     return {ok:true, match:memory.get(id)};

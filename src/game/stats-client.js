@@ -74,13 +74,14 @@ class GameTracker extends EventEmitter {
     for (const [key, time] of this.recent) if (at - time > 15000) this.recent.delete(key);
     this.emit("event", { id: `${this.guid || "local"}:${++this.sequence}`, type, at: new Date(at).toISOString(), source: "stats", player: this.state.playerName || null, team: this.state.team, blueScore: this.state.blueScore, orangeScore: this.state.orangeScore, clock: this.state.clock, overtime: this.state.overtime, ...extra });
   }
-  startMatch(guid) {
+  startMatch(guid, partialCapture = false) {
     if (this.state.matchActive && !this.ended && (!guid || !this.guid || this.guid === guid)) {
       if (guid) this.guid = guid;
       return;
     }
     this.reset(guid);
     this.state.matchActive = true;
+    this.state.partialCapture = partialCapture;
     this.event("match_start");
     this.publish();
   }
@@ -115,10 +116,14 @@ class GameTracker extends EventEmitter {
     const guid = data.MatchGuid || null;
     if (event === "MatchCreated" || event === "MatchInitialized") { this.startMatch(guid); return; }
     if (event === "UpdateState") {
-      if (guid && this.guid && guid !== this.guid) this.startMatch(guid);
-      else if (!this.state.matchActive && !this.ended) this.startMatch(guid);
+      if (guid && this.guid && guid !== this.guid) this.startMatch(guid, true);
+      else if (!this.state.matchActive && !this.ended) this.startMatch(guid, true);
       if (guid && !this.guid) this.guid = guid;
       const game = data.Game || {};
+      if (!game.bReplay) {
+        if (Number.isInteger(game.PlaylistId) && game.PlaylistId >= 0) this.state.playlistId = game.PlaylistId;
+        if (typeof game.Arena === 'string') this.state.arena = game.Arena.replace(/[\u0000-\u001f]/g, '').slice(0, 100);
+      }
       const teams = Array.isArray(game.Teams) ? game.Teams : Array.isArray(data.Teams) ? data.Teams : [];
       for (let i = 0; i < teams.length; i += 1) {
         const team = teamNumber(teams[i].TeamNum ?? i);
@@ -130,12 +135,13 @@ class GameTracker extends EventEmitter {
       this.ambiguousLocal=false;
       const localCandidates=players.filter(player=>this.isLocal(player));
       this.ambiguousLocal=localCandidates.length>1;
-      if(this.ambiguousLocal){this.state.team=null;for(const key of ['goals','shots','saves','assists'])this.state[key]=null;}
-      this.teamContext.update(Array.isArray(data.Players) ? data.Players : null,game);
+      if(this.ambiguousLocal){this.state.team=null;for(const key of ['goals','shots','saves','assists','score','touches','cartouches','demos'])this.state[key]=null;}
+      // Empty post-match packets must not erase an already identified driver.
+      if (!(this.ended && players.length === 0)) this.teamContext.update(Array.isArray(data.Players) ? data.Players : null,game);
       const mine = localCandidates.length===1?localCandidates[0]:null;
       if (mine && !game.bReplay) {
         this.identify(mine);
-        for (const stat of ["Goals", "Saves", "Shots", "Assists"]) this.state[stat.toLowerCase()] = number(mine[stat]);
+        for (const stat of ["Goals", "Saves", "Shots", "Assists", "Score", "Touches", "CarTouches", "Demos"]) this.state[stat.toLowerCase()] = typeof mine[stat] === 'number' && Number.isFinite(mine[stat]) && mine[stat] >= 0 ? mine[stat] : null;
       }
       this.publish();
       if (game.bHasWinner) {

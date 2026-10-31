@@ -2,6 +2,14 @@
 
 A standalone Windows desktop companion for Rocket League. Jackshaft, a foul-mouthed pumpkin pit-crew mechanic, hangs out over your desktop and game. The original Ratchet artwork remains selectable. Six personality packs include Jackshaft, Pit Boss, Afterburn, Ratchet, Amp and Moss.
 
+## New in 0.6.0 - the driver dossier
+
+**Player profile** turns retained, completed match memory into a local driver history: reported score, goals, shots, assists, saves, ball touches, car contacts and demolitions; win rate, goal/shot ratio, goal involvement, recent form, personal bests and confirmed teammate scorer-assister combinations. Filter by driver display name, date window and game-reported playlist ID. Open a match to inspect both teams, a scoreboard timeline, recorded events, up to twelve saved frames and any existing coaching report.
+
+New acquisition retains playlist/arena context and up to 180 scoreboard samples, normally five seconds apart. A final-score update can replace the latest sample. Feed connections that first discover an ongoing match are marked partial. Empty post-match packets no longer erase an identified driver. Existing records contribute whatever facts they already contain; missing fields and old timelines are never invented. Statistical denominators use only matches reporting the relevant fields.
+
+Set your exact in-game name in **Connection & AI**, enable match memory before playing, and finish a match. Profiles are available between matches or with Rocket League closed. They follow the same retention/deletion settings as match memory and do not make AI requests. They are not account-wide lifetime stats, ranks, inferred positioning or boost analytics. Display-name groups are not verified account identities. Vision frames and saved coaching interpretations remain separate from confirmed numeric totals. See [profile metrics and limits](docs/PLAYER-PROFILE.md).
+
 ## New in 0.5.2 - desktop stream visibility
 
 Removed Windows capture exclusion from the companion overlay so desktop screen shares can include the character and bubbles. For Discord, share the monitor containing the game and buddy; capturing only the Rocket League application can omit separate overlay windows. Select the Rocket League window as RL Buddy's own AI vision source to avoid feeding the buddy's bubbles back into its vision. This changes screen-share visibility, not capture consent or AI settings. End-to-end Discord streaming still needs verification on the user's machine.
@@ -60,7 +68,7 @@ Built-in image-generation tool; saved asset: `app/renderer/assets/jackshaft-shee
 
 ## Run the app
 
-Double-click **`dist/RL-Buddy-v0.5.2.exe`**. This portable build includes its runtime; Node and the original `rl` app are not needed. Closing the dashboard keeps the buddy in the system tray. Use the tray's **Quit RL Buddy** command to exit.
+Double-click **`dist/RL-Buddy-v0.6.0.exe`**. This portable build includes its runtime; Node and the original `rl` app are not needed. Closing the dashboard keeps the buddy in the system tray. Use the tray's **Quit RL Buddy** command to exit.
 
 For development:
 

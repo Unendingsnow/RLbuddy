@@ -22,8 +22,9 @@ class DiskStore {
       if(this.background)this.schedule();else this.sync();
     } catch(error){this.fail(error);}
   }
+  record(id) { return structuredClone(this.cache.get(id)||JSON.parse(fs.readFileSync(path.join(this.dir,id+'.json'),'utf8'))); }
   read(id) {
-    const record=structuredClone(this.cache.get(id)||JSON.parse(fs.readFileSync(path.join(this.dir,id+'.json'),'utf8')));
+    const record=this.record(id);
     record.frames=(record.frames||[]).flatMap(f=>{
       if(f.dataUrl)return [f];
       if(!new RegExp(`^${id}-\\d{1,3}\\.jpg$`).test(f.file||''))return [];

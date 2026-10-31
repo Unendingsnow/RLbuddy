@@ -53,7 +53,7 @@ async function runSmoke({ dashboard, overlay, state, store, registry, changeSett
   fs.writeFileSync(path.join(artifacts, 'overlay.png'), (await overlay.webContents.capturePage()).toPNG());
   // Exercise memory/coaching through the real sandbox bridge; no paid provider calls.
   game.tracker.setConnected(true);
-  const scorer={Name:'Smoke teammate',TeamNum:0,Shortcut:1,Goals:2,Shots:4,Assists:0,Saves:1};
+  const scorer={Name:'Smoke teammate',TeamNum:0,Shortcut:1,bIsLocalPlayer:true,Score:450,Goals:2,Shots:4,Assists:0,Saves:1,Touches:18,CarTouches:2,Demos:1};
   const assister={Name:'Smoke passer',TeamNum:0,Shortcut:2,Goals:0,Shots:1,Assists:2,Saves:0};
   game.tracker.handleMessage({ Event:'UpdateState', Data:{ MatchGuid:'smoke-match', Game:{TimeSeconds:100,Teams:[{TeamNum:0,Score:2},{TeamNum:1,Score:1}]},Players:[scorer,assister,{Name:'Smoke opponent',TeamNum:1,Shortcut:3,Goals:1,Shots:2,Assists:0,Saves:2}] } });
   game.tracker.handleMessage({Event:'GoalScored',Data:{Scorer:scorer,Assister:assister}});
@@ -70,7 +70,45 @@ async function runSmoke({ dashboard, overlay, state, store, registry, changeSett
   assert.equal(await dashboard.webContents.executeJavaScript("document.querySelectorAll('#team-evidence tr').length"),4);
   await delay(300);
   fs.writeFileSync(path.join(artifacts,'coaching.png'),(await dashboard.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  // Additional isolated game-feed fixtures exercise history aggregation and charts.
+  const scores=[210,320,100,640,370],goals=[1,2,0,3,1];
+  for(let i=0;i<scores.length;i++){
+    game.tracker.handleMessage({Event:'MatchCreated',Data:{MatchGuid:`profile-smoke-${i}`}});
+    const player={...scorer,Score:scores[i],Goals:goals[i],Shots:goals[i]+2,Saves:i%3,Touches:10+i*3};
+    game.tracker.handleMessage({Event:'UpdateState',Data:{MatchGuid:`profile-smoke-${i}`,Game:{TimeSeconds:0,PlaylistId:i%2?13:11,Arena:'Stadium_P',Teams:[{TeamNum:0,Score:goals[i]+2},{TeamNum:1,Score:i%2?goals[i]+3:1}]},Players:[player,assister,{Name:'Smoke opponent',TeamNum:1,Shortcut:3,Goals:1,Shots:2,Saves:2}]}});
+    if(goals[i])game.tracker.handleMessage({Event:'GoalScored',Data:{Scorer:player,Assister:assister}});
+    game.tracker.handleMessage({Event:'MatchEnded',Data:{WinnerTeamNum:i%2?1:0}});
+  }
+  await dashboard.webContents.executeJavaScript("document.querySelector('[data-page=profile]').click()");
+  await waitFor(()=>dashboard.webContents.executeJavaScript("document.getElementById('profile-name').textContent === 'Smoke teammate' && !document.getElementById('profile-content').hidden"),'player profile');
+  const profile = await dashboard.webContents.executeJavaScript('window.buddy.getProfile({})');
+  assert.equal(profile.profile.matches,6);
+  assert.equal(profile.profile.metrics.score.total,2090);
+  assert.equal(profile.profile.metrics.touches.total,98);
+  assert.equal(profile.profile.teammates[0].assistedYou,5);
+  const filtered = await dashboard.webContents.executeJavaScript('window.buddy.getProfile({playlist:11})');
+  assert.equal(filtered.profile.matches,3);assert.equal(filtered.profile.metrics.score.total,680);
+  dashboard.webContents.invalidate(); await delay(400);
+  fs.writeFileSync(path.join(artifacts,'player-profile.png'),(await dashboard.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  await dashboard.webContents.executeJavaScript("document.getElementById('profile-metric').value='score';document.getElementById('profile-metric').dispatchEvent(new Event('change'));document.getElementById('profile-chart').scrollIntoView({block:'center'})");
+  assert.equal(await dashboard.webContents.executeJavaScript("document.querySelectorAll('#profile-chart svg rect').length"),6);
+  dashboard.webContents.invalidate(); await delay(300);
+  fs.writeFileSync(path.join(artifacts,'player-trends.png'),(await dashboard.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  await dashboard.webContents.executeJavaScript("document.querySelector('#profile-matches button').click()");
+  await waitFor(()=>dashboard.webContents.executeJavaScript("!document.getElementById('profile-evidence').hidden"),'profile match evidence');
+  assert.equal(await dashboard.webContents.executeJavaScript("document.querySelectorAll('#profile-scoreboard tbody tr').length"),3);
+  dashboard.webContents.invalidate(); await delay(300);
+  fs.writeFileSync(path.join(artifacts,'player-evidence.png'),(await dashboard.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  const profileSize=dashboard.getSize();
+  dashboard.setSize(960,700);
+  await dashboard.webContents.executeJavaScript("document.getElementById('profile-close').click();document.querySelector('[data-page=profile]').click();window.scrollTo(0,0)");
+  dashboard.webContents.invalidate();await delay(400);
+  assert.equal(await dashboard.webContents.executeJavaScript('document.documentElement.scrollWidth <= document.documentElement.clientWidth'),true,'profile fits the minimum window width');
+  fs.writeFileSync(path.join(artifacts,'player-profile-compact.png'),(await dashboard.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  dashboard.setSize(...profileSize);
   game.tracker.handleMessage({Event:'MatchCreated',Data:{MatchGuid:'next-smoke-match'}});
+  await waitFor(()=>dashboard.webContents.executeJavaScript("document.getElementById('profile-content').hidden"),'profile hidden in live match');
+  assert.equal((await dashboard.webContents.executeJavaScript('window.buddy.getProfile({})')).ok,false);
   await waitFor(() => dashboard.webContents.executeJavaScript("document.getElementById('review-actions').hidden && document.getElementById('review-text').textContent.includes('paused')"),'review hidden during match');
   assert.equal(await dashboard.webContents.executeJavaScript("document.querySelectorAll('#team-evidence tr').length"),0);
   const blocked = await dashboard.webContents.executeJavaScript(`window.buddy.reviewMatch(${JSON.stringify(match.id)}, false)`);

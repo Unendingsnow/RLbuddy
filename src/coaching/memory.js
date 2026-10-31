@@ -17,6 +17,7 @@ class MatchMemory {
   metadata(m) { return { id:m.id, startedAt:m.startedAt, endedAt:m.endedAt, result:m.result, stats:m.stats, events:m.events.length, frames:m.frames.length, players:m.roster?.players?.length || 0,teamEvents:m.teamEvents?.length || 0,reviewed:Boolean(m.review) }; }
   write(m) { this.file(m.id);this.disk.save(m);this.index.set(m.id,this.metadata(m)); }
   get(id) {this.file(id);return this.disk.read(id);}
+  records() { return this.list().filter(m=>m.endedAt).flatMap(m=>{try{return [this.disk.record(m.id)];}catch{return [];}}); }
   flush() {return this.disk.flush();}
   list() {
     return [...this.index.values()].sort((a,b) => b.startedAt - a.startedAt);
@@ -31,19 +32,32 @@ class MatchMemory {
     if (['win','loss','match_end'].includes(e.type)) this.finish(e.type); else this.write(this.current);
   }
   snapshot(s) {
-    const { goals, shots, saves, assists, blueScore, orangeScore } = s;
+    const { goals, shots, saves, assists, score, touches, cartouches, demos, blueScore, orangeScore } = s;
     if(!this.current){
       if(!s.connected || !s.matchEnded || !this.lastFinished || !this.index.has(this.lastFinished.id))return;
-      const stats={goals,shots,saves,assists,blueScore,orangeScore};
-      const signature=JSON.stringify({stats,roster:s.roster});
+      const stats={goals,shots,saves,assists,score,touches,cartouches,demos,blueScore,orangeScore};
+      const signature=JSON.stringify({stats,roster:s.roster,context:[s.playlistId,s.arena]});
       if(signature===this.lastFinished.signature)return;
       const m=this.get(this.lastFinished.id);m.stats=stats;if(s.roster)m.roster=structuredClone(s.roster);
+      this.detail(m,s,true);
       // Preserve an existing report but flag that its evidence has since changed.
       if(m.review)m.review.evidenceUpdated=true;
       this.write(m);this.lastFinished.signature=signature;return;
     }
-    this.current.stats = { goals, shots, saves, assists, blueScore, orangeScore };
+    this.current.stats = { goals, shots, saves, assists, score, touches, cartouches, demos, blueScore, orangeScore };
     if(s.roster)this.current.roster=structuredClone(s.roster);
+    this.detail(this.current,s);
+  }
+  detail(m,s,final=false) {
+    m.context={...(m.context||{}),playlistId:s.playlistId??m.context?.playlistId??null,arena:s.arena??m.context?.arena??null,partialCapture:s.partialCapture??m.context?.partialCapture??null};
+    if(s.roster?.replay || !s.roster?.players?.length)return;
+    m.scoreboardTimeline ||= [];
+    const previous=m.scoreboardTimeline.at(-1),at=this.now();
+    if(!final && previous && at-previous.at<5000)return;
+    const row={at,seconds:Math.max(0,Math.round((at-m.startedAt)/1000)),clock:s.clock,overtime:Boolean(s.overtime),blueScore:s.blueScore,orangeScore:s.orangeScore,localId:s.roster.localId,players:s.roster.players.map(p=>({id:p.id,stats:{...p.stats}}))};
+    if(final && previous && at-previous.at<5000)m.scoreboardTimeline[m.scoreboardTimeline.length-1]=row;
+    else m.scoreboardTimeline.push(row);
+    if(m.scoreboardTimeline.length>180)m.scoreboardTimeline.splice(0,m.scoreboardTimeline.length-180);
   }
   teamEvent(e) {
     if(!this.current || e.source!=='stats')return;

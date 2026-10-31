@@ -6,6 +6,8 @@ RL Buddy runs on your Windows computer. This build has no analytics, account ser
 
 The game connection reads Rocket League's local Stats API. Match memory stores observed events, scoreboard stats and player display names in your Windows account's app-data folder. Platform account IDs used for matching are not persisted. Memory can be disabled, deleted, or retained for 7, 30 or 90 days, subject to count and size limits.
 
+Player profiles are calculated locally from that retained history. New matches also record playlist/arena context and up to 180 scoreboard samples, normally five seconds apart, with a final-score update. Score, goals, shots, assists, saves, touches, car contacts and demolitions are retained only when reported. Profiles and teammate summaries group display names, not verified accounts; identically named accounts cannot be reliably distinguished across matches. Opening the profile makes no AI or external account lookup requests. Optional saved images and existing reviews can be opened alongside a completed match. Deleting or expiring its memory removes its contribution to the profile; profiles are not a separate lifetime database.
+
 Screen capture is optional and resets off on each launch. Select the source yourself. Local frame saving and AI vision have separate switches. A one-shot test sends just the selected test image or selected-window image. No microphone recording or full-video recording is included. Ctrl+Shift+P stops capture and pauses AI; resuming does not restart capture.
 
 ## AI services

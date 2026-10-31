@@ -8,6 +8,7 @@ const listen = (channel, callback) => {
 };
 contextBridge.exposeInMainWorld('buddy', {
   getState: () => invoke('buddy:state'),
+  getProfile: filters => invoke('buddy:profile', filters),
   getMatch: id => invoke('buddy:match', id),
   reviewMatch: (id, ai) => invoke('buddy:review', {id,ai}),
   deleteMatch: id => invoke('buddy:delete-match', id),
