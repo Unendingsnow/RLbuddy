@@ -1,7 +1,7 @@
 {
   "name": "rlbuddy",
   "productName": "RL Buddy",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Your animated, opinionated Rocket League desktop companion.",
   "private": true,
   "author": "RL Buddy",

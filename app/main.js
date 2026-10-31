@@ -136,7 +136,9 @@ function createWindows() {
   dashboard.once('ready-to-show', () => { if (!smoke) dashboard.show(); });
   dashboard.on('close', event => { if (!quitting && !smoke) { event.preventDefault(); dashboard.hide(); } });
   overlay = new BrowserWindow({ width: 380, height: 400, frame: false, transparent: true, backgroundColor: '#00000000', resizable: false, hasShadow: false, skipTaskbar: true, focusable: false, alwaysOnTop: true, show: false, title: 'RL Buddy Overlay', webPreferences });
-  overlay.setContentProtection(true);
+  // Allow desktop screen sharing to include the buddy and its speech bubbles.
+  // Capture protection excludes the window from Windows/Discord recordings.
+  overlay.setContentProtection(false);
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   secureWindow(overlay, 'overlay.html');
   overlay.loadFile(path.join(__dirname, 'renderer', 'overlay.html'));

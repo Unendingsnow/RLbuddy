@@ -2,6 +2,10 @@
 
 A standalone Windows desktop companion for Rocket League. Jackshaft, a foul-mouthed pumpkin pit-crew mechanic, hangs out over your desktop and game. The original Ratchet artwork remains selectable. Six personality packs include Jackshaft, Pit Boss, Afterburn, Ratchet, Amp and Moss.
 
+## New in 0.5.2 - desktop stream visibility
+
+Removed Windows capture exclusion from the companion overlay so desktop screen shares can include the character and bubbles. For Discord, share the monitor containing the game and buddy; capturing only the Rocket League application can omit separate overlay windows. Select the Rocket League window as RL Buddy's own AI vision source to avoid feeding the buddy's bubbles back into its vision. This changes screen-share visibility, not capture consent or AI settings. End-to-end Discord streaming still needs verification on the user's machine.
+
 ## New in 0.5.1 - the illustrated midnight garage
 
 Original generated workshop scenery and a new Jackshaft portrait now give the app a cinematic Halloween hot-rod garage: illuminated work bay, collectible pit pass, personality portrait, copper controls and subtle embers. Existing character animations remain intact. Artwork is bundled locally and does not require an AI subscription to display. [Asset paths and final prompts](docs/ART-DIRECTION.md).
@@ -56,7 +60,7 @@ Built-in image-generation tool; saved asset: `app/renderer/assets/jackshaft-shee
 
 ## Run the app
 
-Double-click **`dist/RL-Buddy-v0.5.1.exe`**. This portable build includes its runtime; Node and the original `rl` app are not needed. Closing the dashboard keeps the buddy in the system tray. Use the tray's **Quit RL Buddy** command to exit.
+Double-click **`dist/RL-Buddy-v0.5.2.exe`**. This portable build includes its runtime; Node and the original `rl` app are not needed. Closing the dashboard keeps the buddy in the system tray. Use the tray's **Quit RL Buddy** command to exit.
 
 For development:
 

@@ -15,6 +15,7 @@ async function runSmoke({ dashboard, overlay, state, store, registry, changeSett
   await waitFor(() => dashboard.webContents.executeJavaScript("Boolean(window.buddy && document.getElementById('buddy-name')?.textContent === 'Jackshaft')"), 'dashboard ready');
   await waitFor(() => overlay.webContents.executeJavaScript("Boolean(document.getElementById('overlay-character')?.querySelector('svg'))"), 'overlay ready');
   assert.equal(state().personalities.length >= 3, true);
+  assert.equal(overlay.isContentProtected(), false, 'desktop sharing must not exclude the buddy');
   assert.equal(await dashboard.webContents.executeJavaScript('typeof require'), 'undefined');
   assert.equal(await dashboard.webContents.executeJavaScript('typeof process'), 'undefined');
   const result = await dashboard.webContents.executeJavaScript("window.buddy.demo('goal')"); assert.equal(result.ok, true);
