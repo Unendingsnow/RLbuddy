@@ -9,7 +9,7 @@
   <div class="settings-grid"><section class="card settings-card"><h2>Local match memory</h2>
   <label class="toggle-row"><span>Save match events & stats</span><input type="checkbox" id="memory-enabled"><span class="toggle-visual"></span></label>
   <label class="toggle-row"><span>Save selected-window frames this launch</span><input type="checkbox" id="memory-capture"><span class="toggle-visual"></span></label>
-  <p>Choose a source in Connection & AI. Frames stay on this PC until you request an AI review. Capture resets to off each launch. Up to 90 frames per match, sampled at least 10 seconds apart; this is not a full video recording.</p>
+  <p>This switch saves selected-window frames on this PC for later review. If live AI vision is also enabled in Connection & AI, that separate feature sends sampled images to your selected provider during play. An AI review sends selected saved frames. Both capture switches reset to off each launch. Memory saves up to 90 frames per match, at least 10 seconds apart; it is not a full video recording.</p>
   <label class="field-label" for="memory-days">Keep history</label><select id="memory-days"><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
   <p>Automatic limits: 100 matches / 500 MB. Deleting a match also removes its frames and saved review.</p>
   <button class="button secondary" id="memory-clear">Delete all match memory</button>
@@ -26,7 +26,7 @@
     const table=document.createElement('table'),head=document.createElement('tr');for(const label of ['Player','Team','Role','G','Shots','A','Saves','Demos']){const th=document.createElement('th');th.textContent=label;head.append(th);}table.append(head);
     const local=players.find(p=>p.id===roster.localId);
     for(const p of players){const row=document.createElement('tr');const role=p.id===roster.localId?'You':local && [0,1].includes(local.team) && [0,1].includes(p.team)?p.team===local.team?'Teammate':'Opponent':'Unknown';for(const value of [p.name,p.team===0?'Blue':p.team===1?'Orange':'?',role,...['goals','shots','assists','saves','demos'].map(k=>p.stats?.[k]??'?')]){const td=document.createElement('td');td.textContent=String(value);row.append(td);}table.append(row);}evidence.append(table);
-    const note=document.createElement('p');note.textContent=`${match.teamEvents?.length || 0} attributed events. “?” means not reported. Names and team stats are included when you request an AI review. Totals alone do not prove rotations or teammate fault.`;evidence.append(note);
+    const note=document.createElement('p');note.textContent=`${match.teamEvents?.length || 0} attributed events. “?” means not reported. AI reviews include team stats; structured names are replaced when name anonymization is on. Names inside saved images are not redacted. Totals alone do not prove rotations or teammate fault.`;evidence.append(note);
   }
   // A separate bridge subscription keeps evidence private when play resumes.
   api.onState(s=>{if(!s.memory?.allowed)evidence.replaceChildren();});

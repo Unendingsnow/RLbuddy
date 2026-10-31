@@ -1,0 +1,128 @@
+/* Original generated artwork: see docs/ART-DIRECTION.md for provenance/prompts.
+   Dashboard only: no scene textures are loaded by the desktop overlay. */
+:root { --copper: #f3a25c; --bone: #f2dfbe; }
+body { background: #10191b; }
+main { background: radial-gradient(ellipse at 82% 0, #b75b1c14, transparent 55%); }
+.sidebar {
+  background: linear-gradient(165deg, #223331, #111b1e 55%);
+  border-right-color: #655642;
+}
+.brand { color: #f0d8af; }
+.sidebar-label { color: #d49a65; }
+.nav-item.active { background: #493a2b; color: #ffe5bc; box-shadow: inset 3px 0 #ee9c52; }
+.topbar { background: #111d1e; border-bottom-color: #4b493a; }
+.page-heading h1 { color: #f7dfb8; letter-spacing: -1.3px; }
+.page-heading .eyebrow { color: #f2a45f; }
+.card { border-color: #4d5649; box-shadow: 0 10px 30px #0003, inset 0 1px #e7bc7c08; }
+.button.primary { background: #eeb06c; border-color: #f7c487; }
+.button.primary:hover { background: #ffd198; }
+.button:focus-visible, a:focus-visible { outline-color: #ffc479; }
+.control-strip { background: #17292a; border-color: #47605a; }
+.control-strip[data-active=true] { background: #3b3023; border-color: #db9d57; }
+
+/* A collectible pit pass, rather than another generic sidebar card. */
+.shortcut-card {
+  padding: 16px 13px 15px;
+  margin-top: 24px;
+  border: 1px solid #9b7950;
+  border-top: 3px solid #ce995d;
+  border-radius: 5px 5px 12px 12px;
+  background: linear-gradient(135deg, #30352b, #19282a);
+  overflow: hidden;
+}
+.shortcut-card::before {
+  content: '';
+  display: block;
+  height: 132px;
+  margin: -16px -13px 14px;
+  border-bottom: 1px solid #83603e;
+  background: linear-gradient(0deg, #17232144, transparent 40%), url('assets/jackshaft-portrait-v2.png') center 29% / cover;
+}
+.shortcut-card .key-label { font-size: 11px; line-height: 1.6; color: #f4d2a0; }
+.shortcut-card p { color: #b9c6b7; }
+.shortcut-card .little-spark { color: #da9c59; }
+
+/* Preserve real controls and the animated character over a static environment. */
+.buddy-stage {
+  height: 440px;
+  min-height: 440px;
+  background: #142328 url('assets/midnight-garage-v2.png') center 48% / cover no-repeat;
+  border-color: #aa7845;
+  border-radius: 10px;
+  box-shadow: 0 12px 36px #0005, 0 0 0 3px #c6813320;
+}
+.buddy-stage::before {
+  content: '';
+  inset: 0;
+  background: linear-gradient(0deg, #071418cc, transparent 28%, transparent 72%, #10222655);
+  opacity: 1;
+  z-index: 0;
+}
+.buddy-stage::after {
+  content: '';
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(ellipse at 19% 24%, #ffae3b16, transparent 45%);
+  animation: workshop-light 8s ease-in-out infinite;
+}
+.stage-top { background: #142326dc; border-bottom: 1px solid #b87c434d; padding: 12px 15px; }
+.stage-top .tiny-label { color: #f0d6ad; }
+.stage-tag { color: #c5bd9f; }
+.stage-bottom { padding: 13px 16px; background: #0c1b1ee8; border-color: #82633c; }
+.stage-bottom > span:last-child { color: #c8b494; }
+.preview-character { top: auto; bottom: 39px; width: 285px; height: 295px; margin-left: -142px; }
+.preview-character .jackshaft-art { filter: drop-shadow(0 14px 8px #000a); }
+.character-floor { bottom: 40px; width: 160px; height: 22px; background: #020e10a3; filter: blur(5px); }
+.preview-bubble { left: auto; right: 18px; top: 61px; width: min(270px, 62%); min-width: 0; }
+.preview-bubble, .overlay-bubble { background: linear-gradient(130deg, #fff0cf, #dbc5a0); }
+.preview-bubble { box-shadow: 0 7px 24px #0007; }
+.preview-bubble .bubble-name { color: #85451c; }
+.stage-spark { pointer-events: none; width: 3px; height: 3px; border-radius: 50%; background: #ffd090; color: transparent; box-shadow: 0 0 8px #ff9a40; opacity: 0; animation: workshop-ember 7s ease-in infinite; z-index: 2; }
+.spark-one { left: 19%; top: 70%; }
+.spark-two { left: 83%; top: 64%; animation-delay: 2s; }
+.spark-three { left: 33%; top: 83%; animation-delay: 4s; }
+.buddy-identity .mini-avatar { transform: none; border-color: #b08051; box-shadow: none; }
+:root[data-personality=jackshaft] .mini-avatar { background: #183034 url('assets/jackshaft-portrait-v2.png') center 30% / cover; font-size: 0; }
+.scoreboard { background: linear-gradient(140deg, #112329, #1c302e); }
+.blue-score { color: #8fcce0; }
+.orange-score { color: #ffb871; }
+#match-label { background: #344c3e; color: #d5dfb6; border: 1px solid #6b805a; }
+
+/* Other pages borrow the workshop's materials without putting controls over art. */
+.page:not(#page-companion) > .page-heading {
+  min-height: 140px;
+  padding: 23px;
+  border: 1px solid #69523c;
+  border-radius: 9px;
+  background: linear-gradient(90deg, #122327 0%, #122327f2 48%, #12232750 100%), url('assets/midnight-garage-v2.png') center 38% / cover;
+}
+.page:not(#page-companion) > .page-heading h1 { font-size: 34px; }
+.page:not(#page-companion) > .page-heading p { color: #c0cbbc; max-width: 570px; }
+.pack-card:nth-child(n) { background: radial-gradient(ellipse at 80% 0, #c2813415, transparent 50%), linear-gradient(145deg, #26362e, #14262a); }
+.pack-card[data-personality=jackshaft] .pack-avatar {
+  width: calc(100% + 42px); height: 190px; margin: 12px -21px 23px;
+  border: 0; border-top: 1px solid #b080514d; border-bottom: 1px solid #b080514d; border-radius: 0;
+  overflow: hidden;
+}
+.pack-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; display: block; }
+.pack-card.selected:nth-child(n) { border-color: #d99e5d; background: linear-gradient(145deg, #3d3d2d, #1b3030); }
+.pack-card.selected button { background: #463e2a; border-color: #b89560; }
+.pack-card h3 { color: #f0d4a7; }
+::-webkit-scrollbar-track { background: #111e20; }
+::-webkit-scrollbar-thumb { background: #5a6a5c; border-color: #1b2b29; }
+::-webkit-scrollbar-thumb:hover { background: #bd8c54; }
+@keyframes workshop-light { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
+@keyframes workshop-ember { 0% { opacity: 0; transform: translate(0,0); } 25% { opacity: .8; } 100% { opacity: 0; transform: translate(16px,-80px); } }
+@media(max-width:1050px) {
+  .pack-card[data-personality=jackshaft] .pack-avatar { width: calc(100% + 32px); margin-left: -16px; margin-right: -16px; }
+  .page:not(#page-companion) > .page-heading { padding: 20px; }
+  .page:not(#page-companion) > .page-heading h1 { font-size: 29px; }
+}
+@media(max-width:830px) {
+  .buddy-stage { height: 420px; min-height: 420px; }
+  .preview-bubble { width: min(270px, 75%); }
+  .shortcut-card::before { height: 100px; }
+  .pack-card[data-personality=jackshaft] .pack-avatar { height: 240px; }
+}
+@media(max-height:780px) { .shortcut-card::before { height: 85px; } .shortcut-card { margin-bottom: 14px; } }
+@media(prefers-reduced-motion:reduce) { .buddy-stage::after, .stage-spark { animation: none; } }

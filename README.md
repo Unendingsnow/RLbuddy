@@ -2,6 +2,12 @@
 
 A standalone Windows desktop companion for Rocket League. Jackshaft, a foul-mouthed pumpkin pit-crew mechanic, hangs out over your desktop and game. The original Ratchet artwork remains selectable. Six personality packs include Jackshaft, Pit Boss, Afterburn, Ratchet, Amp and Moss.
 
+## New in 0.5.1 - the illustrated midnight garage
+
+Original generated workshop scenery and a new Jackshaft portrait now give the app a cinematic Halloween hot-rod garage: illuminated work bay, collectible pit pass, personality portrait, copper controls and subtle embers. Existing character animations remain intact. Artwork is bundled locally and does not require an AI subscription to display. [Asset paths and final prompts](docs/ART-DIRECTION.md).
+
+Emergency pause now stops capture and AI before saving settings, so a disk failure cannot prevent the stop. Individual capture-off switches also stop immediately, keeping event/chat AI available. Failed writes and stale enable operations cannot undo these stops, and resuming keeps capture off. Capture privacy copy now distinguishes local memory from separately enabled live AI vision. See the [audit and feature roadmap](docs/AUDIT-2026-10-31.md) for remaining issues and Rocket League compatibility limits.
+
 ## New in 0.5.0 - the midnight garage beta
 
 The entire desktop app now has a Halloween garage theme: pumpkin badge, copper and candlelight controls, haunted workshop stage, dark coaching screens, matching overlay bubbles, and reduced-motion support.
@@ -50,7 +56,7 @@ Built-in image-generation tool; saved asset: `app/renderer/assets/jackshaft-shee
 
 ## Run the app
 
-Double-click **`dist/RL-Buddy-v0.5.0.exe`**. This portable build includes its runtime; Node and the original `rl` app are not needed. Closing the dashboard keeps the buddy in the system tray. Use the tray's **Quit RL Buddy** command to exit.
+Double-click **`dist/RL-Buddy-v0.5.1.exe`**. This portable build includes its runtime; Node and the original `rl` app are not needed. Closing the dashboard keeps the buddy in the system tray. Use the tray's **Quit RL Buddy** command to exit.
 
 For development:
 

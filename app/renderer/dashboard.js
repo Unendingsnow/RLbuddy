@@ -73,6 +73,7 @@ function render() {
   $('version').textContent = `v${state.version || '0.1'}`;
   $('pack-count').textContent = state.personalities.length;
   if (pack) {
+    document.documentElement.dataset.personality = pack.id;
     $('buddy-name').textContent = pack.name;
     $('bubble-name').textContent = pack.name.toUpperCase();
     $('buddy-tagline').textContent = pack.tagline || 'Your desktop ride or die.';
@@ -138,6 +139,7 @@ function renderPacks() {
     const selected = pack.id === state.settings.personalityId;
     const article = document.createElement('article');
     article.className = `card pack-card${selected ? ' selected' : ''}`;
+    article.dataset.personality = pack.id;
     article.style.setProperty('--pack-color', window.BuddyVisual.color(pack.color));
     const stateLabel = document.createElement('div');
     stateLabel.className = 'pack-state';
@@ -145,6 +147,14 @@ function renderPacks() {
     const avatar = document.createElement('div');
     avatar.className = 'pack-avatar';
     avatar.textContent = ['✦', 'ϟ', '✳'][index % 3];
+    if (pack.id === 'jackshaft') {
+      const portrait = document.createElement('img');
+      portrait.src = 'assets/jackshaft-portrait-v2.png';
+      portrait.alt = 'Jackshaft, your pumpkin-headed pit mechanic';
+      portrait.width = 240;
+      portrait.height = 240;
+      avatar.replaceChildren(portrait);
+    }
     const name = document.createElement('h3');
     name.textContent = pack.name;
     const tagline = document.createElement('div');

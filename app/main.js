@@ -19,10 +19,12 @@ const { LocalRuntime } = require('../src/local-runtime');
 const {AiGate}=require('../src/ai-gate');
 const {LocalModels,hardware}=require('../src/local-models');
 const {readJson}=require('../src/http');
+const {SafetyPause}=require('../src/safety-pause');
 let localRuntime,localModels,aiGate,storageWarning=null;
 let memory, ledger, coach, processAbsent = false, processCheckedAt = 0, processTimer;
-const allowed = () => !store?.settings.paused && coachingAllowed(snapshot, processAbsent && Date.now() - processCheckedAt < 5000);
-let speechUntil = 0, liveBanter, interactionTestBusy = false;
+const runtimeSettings = () => safetyPause.apply(store.settings);
+const allowed = () => !runtimeSettings().paused && coachingAllowed(snapshot, processAbsent && Date.now() - processCheckedAt < 5000);
+let speechUntil = 0, liveBanter, interactionTestBusy = false, benchmarkController;
 function watchProcess() {
   execFile('tasklist.exe', ['/FI', 'IMAGENAME eq RocketLeague.exe', '/FO', 'CSV', '/NH'], { windowsHide: true, timeout: 3000 }, (error, out) => {
     const before = allowed(); processAbsent = !error && !/RocketLeague\.exe/i.test(out); processCheckedAt = Date.now();
@@ -49,6 +51,18 @@ let visionStatus = { active: false, text: 'Live vision is off', lastCaptureAt: n
 let broadcastTimer = null;
 let captureGeneration = 0;
 let settingsQueue = Promise.resolve();
+const safetyPause = new SafetyPause(() => {
+  ++captureGeneration;
+  capture?.stop(); engine?.cancel(); coach?.cancel(); benchmarkController?.abort(); liveBanter?.reset();
+  speechUntil = 0; send('buddy:clear'); updateTray(); broadcast(true);
+}, () => {
+  ++captureGeneration;
+  capture?.stop();
+  // Invalidate pending image work, while event/chat requests remain available.
+  if (engine?.activeKind === 'observation') liveBanter?.reset();
+  if (liveBanter) { liveBanter.frame = null; liveBanter.recentEvent = null; }
+  engine?.cancelObservation(); updateTray(); broadcast(true);
+});
 
 function icon() {
   const file = path.join(__dirname, '../build/icon.png');
@@ -63,7 +77,7 @@ function icon() {
   return nativeImage.createFromBitmap(pixels, { width: 32, height: 32 });
 }
 function state() {
-  return { settings: store.public(), personalities: registry.list(), status, snapshot, history, visionStatus, localSetup: localRuntime?.status, modelDownload:localModels?.status, aiControl:aiGate?.status(), storageWarning, memory: memory ? { matches: memory.list(), progress: memory.progress(), allowed: allowed() } : null, usage: ledger?.summary(), version: app.getVersion() };
+  return { settings: safetyPause.apply(store.public()), personalities: registry.list(), status, snapshot, history, visionStatus, localSetup: localRuntime?.status, modelDownload:localModels?.status, aiControl:aiGate?.status(), storageWarning, memory: memory ? { matches: memory.list(), progress: memory.progress(), allowed: allowed() } : null, usage: ledger?.summary(), version: app.getVersion() };
 }
 function send(channel, value) {
   for (const win of [dashboard, overlay]) if (win && !win.isDestroyed()) win.webContents.send(channel, value);
@@ -75,7 +89,7 @@ function broadcast(immediate = false) {
 }
 function problem(message) { send('buddy:error', typeof message === 'string' ? message : message.message); }
 function publish(reaction, force = false) {
-  if (!reaction || quitting || store.settings.paused) return;
+  if (!reaction || quitting || runtimeSettings().paused) return;
   if (!force && reaction.eventType !== 'chat' && Date.now() < speechUntil) return;
   reaction.durationMs = Math.max(10000, Math.min(18000, reaction.text.length * 70));
   speechUntil = Date.now() + reaction.durationMs + 1500;
@@ -149,10 +163,10 @@ function updateTray() {
   tray.setToolTip(`RL Buddy — ${status.text}`);
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Open RL Buddy', click: showDashboard },
-    { label:'Pause AI & capture',type:'checkbox',checked:store.settings.paused,click:item=>changeSettings({paused:item.checked}).catch(problem) },
+    { label:'Pause AI & capture',type:'checkbox',checked:runtimeSettings().paused,click:item=>changeSettings({paused:item.checked}).catch(problem) },
     { label: 'Show buddy', type: 'checkbox', checked: store.settings.overlayVisible, click: item => changeSettings({ overlayVisible: item.checked }).catch(problem) },
     { label: 'Click through buddy', type: 'checkbox', checked: store.settings.overlayLocked, click: item => changeSettings({ overlayLocked: item.checked }).catch(problem) },
-    { label: 'Stop all capture', enabled: store.settings.vision.enabled || store.settings.memory.capture, click: () => changeSettings({ vision: { enabled: false }, memory: { capture: false } }).catch(problem) },
+    { label: 'Stop all capture', enabled: !runtimeSettings().paused && (runtimeSettings().vision.enabled || runtimeSettings().memory.capture), click: () => changeSettings({ vision: { enabled: false }, memory: { capture: false } }).catch(problem) },
     { type: 'separator' },
     { label: 'Quit RL Buddy', click: () => app.quit() },
   ]));
@@ -160,7 +174,7 @@ function updateTray() {
 function startEngine() {
   liveBanter?.reset();
   engine?.dispose();
-  engine = new ReactionEngine({ gate:aiGate, onUsage: row => { ledger.record(row); broadcast(); }, getSettings: () => store.private(), getPersonality: id => registry.get(id), onStatus: value => {
+  engine = new ReactionEngine({ gate:aiGate, onUsage: row => { ledger.record(row); broadcast(); }, getSettings: () => safetyPause.apply(store.private()), getPersonality: id => registry.get(id), onStatus: value => {
     status.ai = value.text; status.aiState = value.state; broadcast();
     if (value.eventType === 'chat' && value.partialText) send('buddy:partial', { text: value.partialText, eventType: 'chat', personalityId: store.settings.personalityId });
   } });
@@ -186,8 +200,8 @@ async function syncCapture() {
   const generation = ++captureGeneration;
   engine.cancelObservation?.();
   capture.stop();
-  const s = store.settings;
-  if (!(s.vision.enabled && s.ai.enabled) && !s.memory.capture) {
+  const s = runtimeSettings();
+  if (s.paused || (!(s.vision.enabled && s.ai.enabled) && !s.memory.capture)) {
     visionStatus = { ...visionStatus, active: false, text: 'Live vision is off' }; broadcast(); return;
   }
   if (!s.vision.sourceId) throw new Error('Choose a game window before enabling live vision.');
@@ -200,9 +214,11 @@ async function syncCapture() {
   }
 }
 function changeSettings(patch) {
+  // Stop now, even if a previous settings write/start-capture request is pending.
+  patch = safetyPause.patch(patch);
+  const pauseGeneration = safetyPause.request(patch);
   const operation = settingsQueue.then(async () => {
-    const before = store.public();
-    if(patch?.paused===true){patch={...patch,vision:{...(patch.vision||{}),enabled:false},memory:{...(patch.memory||{}),capture:false}};engine.cancel();liveBanter.reset();send('buddy:clear');}
+    const before = safetyPause.apply(store.public());
     if (patch?.personalityId && !registry.list().some(p => p.id === patch.personalityId)) throw new Error('That personality pack was not found.');
     const nextAi = { ...before.ai, ...(patch?.ai || {}) };
     const nextVision = { ...before.vision, ...(patch?.vision || {}) };
@@ -211,6 +227,7 @@ function changeSettings(patch) {
     if (patch?.memory?.capture && ((patch.paused ?? before.paused) || !nextVision.sourceId || !(patch.memory.enabled ?? before.memory.enabled))) throw new Error('Enable match memory and choose a capture window first.');
     coach?.cancel();
     await store.save(patch);
+    safetyPause.saved(patch, pauseGeneration);
     if(patch.ai || patch.budget || patch.paused!==undefined)aiGate.reason=null;
     const engineChanged = ['personalityId', 'spice', 'chattiness'].some(key => before[key] !== store.settings[key]) || Boolean(patch.ai) || Boolean(patch.budget) || before.paused !== store.settings.paused;
     if (engineChanged) startEngine();
@@ -220,7 +237,7 @@ function changeSettings(patch) {
     if (patch.memory) memory.prune(store.settings.memory.retentionDays);
     if (patch.vision || patch.ai || patch.memory) await syncCapture();
     broadcast(true);
-    return { ok: true, settings: store.public() };
+    return { ok: true, settings: safetyPause.apply(store.public()) };
   });
   settingsQueue = operation.catch(() => {});
   return operation;
@@ -253,7 +270,7 @@ function registerIpc() {
   handle('buddy:test-interaction', async payload => {
     if (!['sample', 'source'].includes(payload?.mode)) throw new Error('Choose a sample or selected-source test.');
     if (interactionTestBusy || liveBanter.busy || engine.active) throw new Error('Your buddy is already thinking. Try again when the reply finishes.');
-    const settings = store.private();
+    const settings = safetyPause.apply(store.private());
     if(settings.paused)throw new Error('Buddy is paused. Resume before running an AI image test.');
     if (!settings.ai.enabled) throw new Error('Enable and save an AI provider first.');
     if (['openai','openai-realtime'].includes(settings.ai.provider) && !settings.ai.apiKey) throw new Error('Add and save your API key first.');
@@ -309,13 +326,14 @@ function registerIpc() {
     if (!allowed()) throw new Error('Run the benchmark between matches or with Rocket League closed.');
     const started = Date.now();
     const ticket=aiGate.acquire({provider:ai.provider,model:ai.model,kind:'benchmark'});
+    const controller = new AbortController(); benchmarkController = controller;
     try {
     const testImage = nativeImage.createFromPath(path.join(__dirname,'renderer/assets/vision-test.png')).toJPEG(85).toString('base64');
-    const r = await fetch(require('../src/personality/engine').endpointFor(ai), {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:ai.model,stream:false,think:false,messages:[{role:'user',content:'Read the score and clock shown in this synthetic test image. Reply with only the two scores and clock.',images:[testImage]}],options:{num_predict:80,num_ctx:2048}}),signal:AbortSignal.timeout(120000)});
+    const r = await fetch(require('../src/personality/engine').endpointFor(ai), {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:ai.model,stream:false,think:false,messages:[{role:'user',content:'Read the score and clock shown in this synthetic test image. Reply with only the two scores and clock.',images:[testImage]}],options:{num_predict:80,num_ctx:2048}}),signal:AbortSignal.any([controller.signal, AbortSignal.timeout(120000)])});
     if (!r.ok) throw new Error('Local vision test failed. Verify the model supports images.');
     const data=await readJson(r); ticket.account({}); ledger.record({provider:'ollama',model:ai.model,kind:'benchmark',usage:{input_tokens:data.prompt_eval_count,output_tokens:data.eval_count}}); broadcast();
     return {ok:true,text:String(data.message?.content || '').slice(0,500),latencyMs:Date.now()-started,expected:'Blue 2, Orange 1, clock 1:23'};
-    } catch(error){ledger.record({provider:ai.provider,model:ai.model,kind:'benchmark',status:'usage unavailable'});throw error;}finally{ticket.release();}
+    } catch(error){ledger.record({provider:ai.provider,model:ai.model,kind:'benchmark',status:'usage unavailable'});throw error;}finally{ticket.release({cancelled:controller.signal.aborted});if(benchmarkController===controller)benchmarkController=null;}
   });
   handle('buddy:settings', changeSettings);
   handle('buddy:visible', value => changeSettings({ overlayVisible: Boolean(value) }));
@@ -377,14 +395,14 @@ else {
     const onStorageError=message=>{storageWarning=message;broadcast();};
     memory = new MatchMemory(app.getPath('userData'),Date.now,{background:true,onError:onStorageError}); memory.prune(store.settings.memory.retentionDays);
     ledger = new UsageLedger(app.getPath('userData'),{background:true,onError:onStorageError});
-    aiGate = new AiGate({getSettings:()=>store.settings,ledger,onChange:()=>broadcast()});
+    aiGate = new AiGate({getSettings:runtimeSettings,ledger,onChange:()=>broadcast()});
     localModels = new LocalModels({onStatus:()=>broadcast()});
     localRuntime = new LocalRuntime({dir:path.join(app.getPath('userData'),'downloads'),onStatus:()=>broadcast()});
-    coach = new Coach({ getSettings: () => store.private(), getPack: () => registry.get(store.settings.personalityId), memory, ledger, allowed, gate:aiGate });
+    coach = new Coach({ getSettings: () => safetyPause.apply(store.private()), getPack: () => registry.get(store.settings.personalityId), memory, ledger, allowed, gate:aiGate });
     if (!smoke) { watchProcess(); processTimer = setInterval(watchProcess, 2000); }
     startEngine();
-    liveBanter = new LiveBanter({ getEngine: () => engine, getSettings: () => store.settings, getSnapshot: () => snapshot,
-      canSpeak: () => !store.settings.paused && !aiGate.status().busy && !interactionTestBusy && Date.now() >= speechUntil, publish,
+    liveBanter = new LiveBanter({ getEngine: () => engine, getSettings: runtimeSettings, getSnapshot: () => snapshot,
+      canSpeak: () => !runtimeSettings().paused && !aiGate.status().busy && !interactionTestBusy && Date.now() >= speechUntil, publish,
       onObservation: value => { visionStatus.lastCaptureAt = value.capturedAt; visionStatus.latencyMs = value.latencyMs; broadcast(); } });
     capture = new LiveCapture({
       onStatus: value => {
@@ -397,14 +415,16 @@ else {
         broadcast();
       },
       onFrame: async frame => {
-        if (store.settings.memory.capture && store.settings.memory.enabled && snapshot.matchActive && Date.now() - frame.capturedAt < 2000) memory.frame(frame);
+        const settings = runtimeSettings();
+        if (settings.paused) return;
+        if (settings.memory.capture && settings.memory.enabled && snapshot.matchActive && Date.now() - frame.capturedAt < 2000) memory.frame(frame);
         await liveBanter.observe(frame);
       },
     });
     registerIpc(); createWindows(); connectGame();
     if (!smoke) {
       tray = new Tray(icon()); tray.on('double-click', showDashboard); updateTray();
-      globalShortcut.register('CommandOrControl+Shift+P', () => changeSettings({paused:!store.settings.paused}).catch(problem));
+      globalShortcut.register('CommandOrControl+Shift+P', () => changeSettings({paused:!runtimeSettings().paused}).catch(problem));
       globalShortcut.register('CommandOrControl+Shift+B', () => changeSettings({ overlayVisible: !store.settings.overlayVisible }).catch(problem));
       globalShortcut.register('CommandOrControl+Shift+L', () => changeSettings({ overlayLocked: !store.settings.overlayLocked }).catch(problem));
     }

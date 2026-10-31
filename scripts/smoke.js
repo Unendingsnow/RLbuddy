@@ -124,6 +124,17 @@ async function runSmoke({ dashboard, overlay, state, store, registry, changeSett
   await store.save({ ai: { apiKey: '' } });
   const settingsFile = JSON.parse(fs.readFileSync(store.file, 'utf8')); assert.equal(settingsFile.ai.apiKey, undefined);
   assert.equal(registry.errors.length, 0);
+  // Check the supported small-window layout after loading the illustrated skin.
+  const originalSize = dashboard.getSize();
+  try {
+    dashboard.setSize(960, 700);
+    await dashboard.webContents.executeJavaScript("document.querySelector('[data-page=companion]').click(); window.scrollTo(0,0)");
+    dashboard.webContents.invalidate(); await delay(500);
+    assert.equal(await dashboard.webContents.executeJavaScript('document.documentElement.scrollWidth <= document.documentElement.clientWidth'), true, 'dashboard fits the minimum window width');
+    const compactArt = await dashboard.webContents.executeJavaScript("(()=>{const c=document.querySelector('.jackshaft-art'),b=c.getBoundingClientRect(),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return {width:b.width,height:b.height,display:getComputedStyle(c).display,hasPixels:d.some((v,i)=>i%4===3&&v>0)}})()");
+    assert.ok(compactArt.width > 100 && compactArt.height > 100 && compactArt.display !== 'none' && compactArt.hasPixels, 'character remains visible at compact size with reduced motion');
+    fs.writeFileSync(path.join(artifacts, 'dashboard-compact.png'), (await dashboard.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  } finally { dashboard.setSize(...originalSize); }
   assert.deepEqual(errors, []);
   console.log('APP SMOKE PASSED: sandboxed renderers, event bubbles, personality switch, chat fallback, overlay focus, navigation, screenshots, validation.');
 }
